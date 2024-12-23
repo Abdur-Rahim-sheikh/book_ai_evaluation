@@ -1,4 +1,6 @@
+__pycache__/
 *.docx
 *.odt
 *.rar
 *.zip
+/resources/
