@@ -1,0 +1,125 @@
+from docx import Document
+from docx.section import Section
+from docx.shared import Pt, Inches
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.enum.section import WD_ORIENTATION
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
+import logging
+from io import BytesIO
+import matplotlib.pyplot as plt
+import pandas as pd
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+class DocumentSectionProcessor:
+
+    def pipeline(self, doc: Document):
+        for section in doc.sections:
+            self.adjust_page_layout(section)
+            self.remove_headers_footers(section)
+        
+        # applying on whole document
+        self.process_tables(doc)
+        
+    # Function to adjust page layout
+    def adjust_page_layout(self, section: Section):
+        
+        cols = section._sectPr.xpath('./w:cols')[0]
+        cols.set(qn('w:num'),'1')
+        section.orientation =WD_ORIENTATION.PORTRAIT
+        section.top_margin = Inches(1)
+        section.bottom_margin = Inches(1)
+        section.left_margin = Inches(1)
+        section.right_margin = Inches(1)
+
+        page_borders = section._sectPr.xpath('./w:pgBorders')
+        if page_borders:
+            for border in page_borders:
+                section._sectPr.remove(border)
+
+    # Function to process headers and footers
+    def remove_headers_footers(self, section: Section):
+        header = section.header
+        footer = section.footer
+        header.is_linked_to_previous = False
+        footer.is_linked_to_previous = False
+        for paragraph in header.paragraphs:
+            paragraph.clear()
+        for paragraph in footer.paragraphs:
+            paragraph.clear()
+
+    # Function to remove unwanted content
+    def enforce_content_restrictions(doc):
+        for para in doc.paragraphs:
+            if any(keyword in para.text for keyword in ["http", "www", "price"]):
+                para.clear()
+
+    # Function to process fonts
+    def fix_fonts(doc):
+        for para in doc.paragraphs:
+            for run in para.runs:
+                if "Arabic" in run.text:
+                    run.font.name = "Al Majeed Quranic"
+                elif "Bengali" in run.text:
+                    run.font.name = "SutonnyMJ"
+                else:
+                    run.font.name = "Times New Roman"
+                run.font.size = Pt(16)
+
+    
+    def process_tables(self, doc: Document, max_width: Inches = Inches(3)):
+        # process this at last as this will work on whole table
+        for table in doc.tables:
+            table_width = sum(cell.width for cell in table.rows[0].cells)
+            logger.info(f"{table_width=}")
+            if table_width <= max_width: continue
+
+            table_data = [[cell.text for cell in row.cells] for row in table.rows]
+            image_stream = self.array_to_image(table_data)
+            
+            parent = table._element.getparent()
+            table_index = list(parent).index(table._element)
+            parent.remove(table._element)
+            new_paragraph_element = OxmlElement("w:p")
+            parent.insert(table_index, new_paragraph_element)  # Insert at the same index
+            paragraph = doc.paragraphs[table_index]
+
+            # Add the image to the new paragraph
+            run = paragraph.add_run()
+            run.add_picture(image_stream)
+
+
+   
+    def array_to_image(self, table: list):
+        df = pd.DataFrame(table[1:], columns=table[0])
+        fig, ax = plt.subplots(figsize=(6, 2))
+        ax.axis('tight')
+        ax.axis('off')
+        table = ax.table(cellText=df.values, colLabels=df.columns, loc='center', cellLoc='center')
+        image_buffer = BytesIO()
+        fig.savefig(image_buffer, format='png', bbox_inches='tight')
+        image_buffer.seek(0)
+        return image_buffer
+
+
+    # Function to clean text boxes
+    def remove_text_boxes(doc):
+        for shape in doc.inline_shapes:
+            if shape.type == 3:  # Text box type
+                # Extract text and re-add to the doc if necessary
+                pass
+
+# # Apply all processing functions
+# adjust_page_layout(doc)
+# remove_headers_footers(doc)
+# enforce_content_restrictions(doc)
+# fix_fonts(doc)
+# process_tables(doc)
+# process_images(doc)
+# remove_text_boxes(doc)
+
+# # Save the processed file
+# doc.save('processed_book.docx')
+
