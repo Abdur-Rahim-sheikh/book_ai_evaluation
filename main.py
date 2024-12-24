@@ -1,29 +1,15 @@
 from fontTools.ttLib import TTFont
 
 from docx import Document
-from unicode_font_converter import UnicodeFontConverter
+from bangla_to_unicode import BanglaToUnicode
+from document_section_processor import DocumentSectionProcessor
 
+ufc = BanglaToUnicode()
+dsp = DocumentSectionProcessor()
+src = 'demo_90191.docx'
+doc = Document(src)
 
+dsp.pipeline(doc)
 
-
-
-
-
-
-
-ufc = UnicodeFontConverter()
-
-
-doc = Document('resources/Project eBook Automation/Ebook/90191.docx')
-
-cnt = 0
-for para in doc.paragraphs:
-    for run in para.runs:
-        # run.text = ufc.convert(run.text, run.font.name)
-        print(f"{run.text=}, {run.font.name=}")
-        
-        print(run.text)
-    cnt+=1
-    if cnt == 10:
-        break
+doc.save('modified_'+src.split('/')[-1])
 

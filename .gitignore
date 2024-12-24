@@ -4,3 +4,4 @@ __pycache__/
 *.rar
 *.zip
 /resources/
+*.~lock.*
