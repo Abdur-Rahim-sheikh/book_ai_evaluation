@@ -9,6 +9,8 @@ import logging
 from io import BytesIO
 import matplotlib.pyplot as plt
 import pandas as pd
+import cv2
+import numpy as np
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -16,12 +18,14 @@ logger = logging.getLogger(__name__)
 class DocumentSectionProcessor:
 
     def pipeline(self, doc: Document):
+        # the calling order is important
         for section in doc.sections:
             self.adjust_page_layout(section)
             self.remove_headers_footers(section)
         
         # applying on whole document
         self.process_tables(doc)
+        # self.formate_image(doc)
         
     # Function to adjust page layout
     def adjust_page_layout(self, section: Section):
@@ -103,6 +107,32 @@ class DocumentSectionProcessor:
         image_buffer.seek(0)
         return image_buffer
 
+    def formate_image(self, doc: Document):
+        for shape in doc.inline_shapes:
+            rel_id = shape._inline.graphic.graphicData.pic.blipFill.blip.embed
+            image_part = doc.part.related_parts[rel_id]
+
+            original_image_bytes = image_part.blob
+            new_image_bytes = self.__ushape_image(original_image_bytes)
+            image_part.blob = new_image_bytes
+
+
+    def __ushape_image(self, image_bytes: bytes):
+        # dummy code
+        np_arr = np.frombuffer(image_bytes, dtype=np.uint8)
+    
+        # 2) Decode the array into an image
+        img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)  # BGR format
+        
+        # 3) Convert the image to grayscale
+        gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        # 4) Encode the grayscale image back to bytes (PNG here)
+        success, buf = cv2.imencode(".png", gray_img)
+        
+        # buf is a 1D array of bytes; we convert it to python bytes
+        return buf.tobytes()
+        
 
     # Function to clean text boxes
     def remove_text_boxes(doc):
