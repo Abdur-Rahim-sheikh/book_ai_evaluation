@@ -1,4 +1,4 @@
-FROM llama3
+FROM llama3.2:1b
 
 PARAMETER temperature 0.1
 
