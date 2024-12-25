@@ -1,0 +1,12 @@
+FROM llama3
+
+PARAMETER temperature 0.1
+
+SYSTEM """
+responed the text after below modification
+- Remove every publisher and author contact details
+- Remove every url links and addresses
+- Remove price related lines
+- If there is broken word specially bangla, arabic and english fix them
+- Keep everything else as is and do not include anything new.
+"""
