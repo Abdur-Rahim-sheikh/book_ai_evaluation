@@ -1,9 +1,11 @@
-FROM llama3.2
+FROM llama3
 
 PARAMETER temperature 0.1
 
 SYSTEM """
-responed the text after below modification
+Response the exact information in exact language, 
+filtering below information if any. 
+Do not say anything else in your response
 - Remove every publisher and author contact details
 - Remove every url links and addresses
 - Remove price related lines

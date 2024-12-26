@@ -6,7 +6,7 @@ from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.enum.section import WD_ORIENTATION
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
-
+from bangla_to_unicode import BanglaToUnicode
 
 import logging
 from io import BytesIO
@@ -24,13 +24,18 @@ class DocumentSectionProcessor:
     CUSTOM_MODEL = "rokomari_bot"
 
     def __init__(self, modelfile_location: str = "static/Modelfile"):
-        if self.CUSTOM_MODEL not in ollama.list():
+        self.btu = BanglaToUnicode()
+        available_models = [model.model for model in ollama.list().models]
+
+        if self.CUSTOM_MODEL+":latest" not in available_models:
             try:
                 modelfile = open(modelfile_location, "r").read()
                 ollama.create(self.CUSTOM_MODEL, modelfile=modelfile)
                 logger.info(f"Model {self.CUSTOM_MODEL} created successfully")
             except Exception as e:
                 logger.error(e)
+        
+        
             
 
     def pipeline(self, doc: Document):
@@ -77,7 +82,12 @@ class DocumentSectionProcessor:
         text = paragraph.text.strip()
         if not text:
             return
-        refined_text = ollama.generate(model=self.CUSTOM_MODEL, prompt=text)
+        text = self.btu.to_sutonnymj(text)
+        response = ollama.generate(model=self.CUSTOM_MODEL, prompt=text)
+        refined_text = response.response
+
+        paragraph.text = refined_text
+        logger.info(f"{text=}, {refined_text=}")
 
     # Function to process fonts
     def fix_fonts(doc):
