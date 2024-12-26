@@ -1,20 +1,18 @@
-from docx import Document
-from docx.section import Section
-from docx.text.paragraph import Paragraph
-from docx.shared import Pt, Inches
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-from docx.enum.section import WD_ORIENTATION
-from docx.oxml.ns import qn
-from docx.oxml import OxmlElement
-from bangla_to_unicode import BanglaToUnicode
-
 import logging
 from io import BytesIO
+
 import matplotlib.pyplot as plt
-import pandas as pd
-import cv2
 import ollama
-import numpy as np
+import pandas as pd
+from docx import Document
+from docx.enum.section import WD_ORIENTATION
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.section import Section
+from docx.shared import Inches
+from docx.text.paragraph import Paragraph
+
+from bangla_to_unicode import BanglaToUnicode
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

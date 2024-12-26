@@ -1,20 +1,19 @@
-from docx import Document
-from docx.section import Section
-from docx.text.paragraph import Paragraph
-from docx.shared import Pt, Inches
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-from docx.enum.section import WD_ORIENTATION
-from docx.oxml.ns import qn
-from docx.oxml import OxmlElement
-from bangla_to_unicode import BanglaToUnicode
-from environs import Env
 import logging
 from io import BytesIO
+
 import matplotlib.pyplot as plt
 import pandas as pd
-import cv2
+from docx import Document
+from docx.enum.section import WD_ORIENTATION
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.section import Section
+from docx.shared import Inches
+from docx.text.paragraph import Paragraph
+from environs import Env
 from openai import AzureOpenAI
-import numpy as np
+
+from bangla_to_unicode import BanglaToUnicode
 
 env = Env()
 env.read_env()

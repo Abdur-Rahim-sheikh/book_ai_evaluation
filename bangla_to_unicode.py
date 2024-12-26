@@ -1,6 +1,6 @@
-import re
 import json
 import logging
+import re
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
