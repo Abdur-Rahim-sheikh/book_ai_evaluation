@@ -5,6 +5,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class BanglaToUnicode:
     def __init__(self):
         self.sutonnymj_mapper = None
@@ -26,6 +27,7 @@ class BanglaToUnicode:
         return self.convert(
             text, self.sutonnymj_mapper["find"], self.sutonnymj_mapper["replace"]
         )
+
     def from_sutonnymj(self, text):
         if not self.sutonnymj_mapper:
             with open(self.sutonnymj_path, "r") as file:

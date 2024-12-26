@@ -7,33 +7,41 @@ from docx.enum.section import WD_ORIENTATION
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 from bangla_to_unicode import BanglaToUnicode
-
+from environs import Env
 import logging
 from io import BytesIO
 import matplotlib.pyplot as plt
 import pandas as pd
 import cv2
-import ollama
+from openai import AzureOpenAI
 import numpy as np
 
+env = Env()
+env.read_env()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 class DocumentSectionProcessor:
-    CUSTOM_MODEL = "rokomari_bot"
 
-    def __init__(self, modelfile_location: str = "static/Modelfile"):
+    def __init__(self):
         self.btu = BanglaToUnicode()
-        available_models = [model.model for model in ollama.list().models]
-
-        if self.CUSTOM_MODEL + ":latest" not in available_models:
-            try:
-                modelfile = open(modelfile_location, "r").read()
-                ollama.create(self.CUSTOM_MODEL, modelfile=modelfile)
-                logger.info(f"Model {self.CUSTOM_MODEL} created successfully")
-            except Exception as e:
-                logger.error(e)
+        self.instruction = """
+            Response the exact information in exact language, 
+            filtering below information if any. 
+            Do not say anything else in your response
+            - Remove every publisher and author contact details
+            - Remove every url links and addresses
+            - Remove price related lines
+            - If there is broken word specially bangla, arabic and english fix them
+            - Keep everything else as is and do not include anything new.
+        """
+        self.client = AzureOpenAI(
+            azure_endpoint=env.str("AZURE_OPENAI_ENDPOINT"),
+            api_key=env.str("AZURE_OPENAI_API_KEY"),
+            api_version=env.str("API_VERSION"),
+        )
+        self.MODEL = env.str("MODEL")
 
     def pipeline(self, doc: Document):
         # the calling order is important
@@ -80,8 +88,14 @@ class DocumentSectionProcessor:
         if not text:
             return
         text = self.btu.to_sutonnymj(text)
-        response = ollama.generate(model=self.CUSTOM_MODEL, prompt=text)
-        refined_text = response.response
+        response = self.client.chat.completions.create(
+            model=self.MODEL,
+            messages=[
+                {"role": "system", "content": self.instruction},
+                {"role": "user", "content": text},
+            ],
+        )
+        refined_text = response.choices[0].message.content
 
         paragraph.text = refined_text
         logger.info(f"{text=}, {refined_text=}")
