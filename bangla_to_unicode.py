@@ -1,6 +1,9 @@
 import re
 import json
+import logging
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class BanglaToUnicode:
     def __init__(self):
@@ -15,13 +18,21 @@ class BanglaToUnicode:
         # Example: '&#65;' -> 'A'
         return re.sub(r"&#(\d+);", lambda match: chr(int(match.group(1))), text)
 
-    def sutonnymj(self, text):
+    def to_sutonnymj(self, text):
         if not self.sutonnymj_mapper:
             with open(self.sutonnymj_path, "r") as file:
                 self.sutonnymj_mapper = json.load(file)
 
         return self.convert(
             text, self.sutonnymj_mapper["find"], self.sutonnymj_mapper["replace"]
+        )
+    def from_sutonnymj(self, text):
+        if not self.sutonnymj_mapper:
+            with open(self.sutonnymj_path, "r") as file:
+                self.sutonnymj_mapper = json.load(file)
+
+        return self.convert(
+            text, self.sutonnymj_mapper["replace"], self.sutonnymj_mapper["find"]
         )
 
     def convert(self, text, find_patterns, replace_patterns):
@@ -37,11 +48,15 @@ class BanglaToUnicode:
 
 
 if __name__ == "__main__":
-    bangla_to_unicode = BanglaToUnicode()
+    btu = BanglaToUnicode()
     text = "Bmjv‡gi mykxZj QvqvZ‡j Avkªq MÖnYKvix fviZxq bIgymwjg‡`i †ivgvÂKi mv¶vrKvi"
     expected = (
         "ইসলামের সুশীতল ছায়াতলে আশ্রয় গ্রহণকারী ভারতীয় নওমুসলিমদের রোমাঞ্চকর সাক্ষাৎকার"
     )
-    converted = bangla_to_unicode.sutonnymj(text)
+    converted = btu.to_sutonnymj(text)
     assert converted == expected, f"Expected: {expected},\n Got: {converted}"
-    print("Hurrah!! tests passed!")
+    logger.info("Hurrah!! sutonny to unicode passed!")
+    converted_back = btu.from_sutonnymj(converted)
+    unicode_again = btu.to_sutonnymj(converted_back)
+    assert unicode_again == expected, f"Expected: {expected},\n Got: {unicode_again}"
+    logger.info("Hurrah!! unicode to sutonny passed!")
